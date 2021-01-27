@@ -35,6 +35,10 @@ class NamingServer(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def update_capacity(self, storage_id, capacity: int):
+        pass
+
+    @abc.abstractmethod
     def queue_deletions(self, storage_id, chunks: list):
         pass
 
@@ -59,5 +63,5 @@ class NamingServer(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def not_enough_replicas(self) -> list:
+    def not_enough_replicas(self, replication_factor: int) -> list:
         pass

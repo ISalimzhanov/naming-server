@@ -1,3 +1,4 @@
+import os
 from string import Template
 from typing import Optional
 
@@ -60,6 +61,15 @@ class MongoNs(NamingServer):
         except TypeError:
             return None
 
+    def update_capacity(self, storage_id: bson.ObjectId, capacity: int):
+        storages: pymongo.collection.Collection = self.db.storage
+        modified = storages.update_one(
+            {'_id': storage_id},
+            {'$set': {'capacity': capacity}}
+        ).modified_count
+        if not modified:
+            raise ValueError("there is no such storage")
+
     def activate_storage(self, storage_id: bson.ObjectId, new_connector: str) -> None:
         stored: pymongo.collection.Collection = self.db.stored
         deleted = stored.delete_many({'storage.$id': storage_id}).deleted_count
@@ -96,7 +106,7 @@ class MongoNs(NamingServer):
                 {
                     'file': bson.DBRef('file', file_id),
                     'first_bit': fist_bit,
-                    'size': chunk_size,
+                    'size': min(chunk_size, file_size - fist_bit),
                 }
             ).inserted_id
             res.append(chunk_id)
@@ -134,8 +144,6 @@ class MongoNs(NamingServer):
     def set_stored(self, storage_id: bson.ObjectId, chunks: list) -> None:
         if not self.db.storage.find_one({'_id': storage_id}):
             raise ValueError("storage with such id doesn't exists")
-        # if not self.db.chunks.find_one({'_id': chunk_id}):
-        #    raise ValueError("chunk with such id doesn't exists")
         stored: pymongo.collection.Collection = self.db.stored
         stored.insert_many(
             [
@@ -186,16 +194,39 @@ class MongoNs(NamingServer):
             raise ValueError("nothing were deleted")
 
     def move_file(self, old_name: str, new_name: str):
-        file: pymongo.collection.Collection = self.db.file
-        if file.find_one({'name': new_name}):
+        files: pymongo.collection.Collection = self.db.file
+        if files.find_one({'name': new_name}):
             raise ValueError("file with such name already exists")
-        modified = file.update_one(
+        modified = files.update_one(
             {'name': old_name},
             {'$set': {'name': new_name}}
         ).modified_count
         if not modified:
             raise ValueError("file with such name doesn't exists")
 
-    def not_enough_replicas(self) -> list:
-        # toDO
-        pass
+    def not_enough_replicas(self, replication_factor: int) -> list:
+        chunks: pymongo.collection.Collection = self.db.chunk
+        stored_at = chunks.aggregate(
+            [
+                {
+                    '$lookup':
+                        {
+                            'from': 'stored',
+                            'localField': '_id',
+                            'foreignField': 'chunk.$id',
+                            'as': 'stored_at',
+                        }
+                },
+            ]
+        )
+        res = []
+        for chunk_info in stored_at:
+            if len(chunk_info['stored_at']) < replication_factor:
+                res.append(chunk_info['_id'])
+        return res
+
+# if __name__ == '__main__':
+#    os.environ['chunk_size'] = "256"
+#    ns = MongoNs(dbname="test", username="user", password="abc123", auth_source="test")
+#    for r in ns.not_enough_replicas(3):
+#        print(r)
