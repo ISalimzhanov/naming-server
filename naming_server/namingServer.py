@@ -23,6 +23,14 @@ class NamingServer(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def get_active_storages(self):
+        pass
+
+    @abc.abstractmethod
+    def get_inactive_storages(self):
+        pass
+
+    @abc.abstractmethod
     def activate_storage(self, storage_id, new_connector: str):
         pass
 
@@ -40,6 +48,10 @@ class NamingServer(abc.ABC):
 
     @abc.abstractmethod
     def queue_deletions(self, storage_id, chunks: list):
+        pass
+
+    @abc.abstractmethod
+    def to_delete(self, storage_id):
         pass
 
     @abc.abstractmethod

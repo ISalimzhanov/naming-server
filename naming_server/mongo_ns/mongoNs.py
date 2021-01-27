@@ -1,4 +1,4 @@
-import os
+# import os
 from string import Template
 from typing import Optional
 
@@ -47,6 +47,16 @@ class MongoNs(NamingServer):
         deleted = storages.delete_one({'_id': storage_id}).deleted_count
         if not deleted:
             raise ValueError("there is no such storage")
+
+    def get_active_storages(self) -> list:
+        storages: pymongo.collection.Collection = self.db.storage
+        active = storages.find({'status': 'active'})
+        return [storage['_id'] for storage in active]
+
+    def get_inactive_storages(self) -> list:
+        storages: pymongo.collection.Collection = self.db.storage
+        inactive = storages.find({'status': 'inactive'})
+        return [storage['_id'] for storage in inactive]
 
     def max_capacity_storage(self) -> Optional[dict]:
         storages: pymongo.collection.Collection = self.db.storage
@@ -179,6 +189,11 @@ class MongoNs(NamingServer):
             ]
         )
 
+    def to_delete(self, storage_id: bson.ObjectId) -> list:
+        deletion_q: pymongo.collection.Collection = self.db.deletion_q
+        to_delete = deletion_q.find({'storage.$id': storage_id})
+        return [deletion['chunk'].id for deletion in to_delete]
+
     def accept_deletions(self, storage_id: bson.ObjectId, chunks: list) -> None:
         deletion_q: pymongo.collection.Collection = self.db.deletion_q
         deleted = deletion_q.delete_many(
@@ -221,8 +236,9 @@ class MongoNs(NamingServer):
         )
         res = []
         for chunk_info in stored_at:
-            if len(chunk_info['stored_at']) < replication_factor:
-                res.append(chunk_info['_id'])
+            replicated = len(chunk_info['stored_at'])
+            if replicated < replication_factor:
+                res.append({'chunk_id': chunk_info['_id'], 'times': replication_factor - replicated})
         return res
 
 # if __name__ == '__main__':
