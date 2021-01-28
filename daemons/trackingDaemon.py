@@ -11,8 +11,3 @@ class TrackingDaemon:
             revived = False  # toDo ping storage
             if not revived:
                 self.ns.deactivate_storage(storage_id)
-        inactive_storages = self.ns.get_inactive_storages()
-        for storage_id in inactive_storages:
-            revived, connector = (False, '')  # toDo ping storage
-            if revived:
-                self.ns.activate_storage(storage_id, connector)

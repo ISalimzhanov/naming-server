@@ -1,0 +1,34 @@
+service DFService{
+  rpc AddFile (AddRequest) returns (AddReply) {}
+  rpc DeleteFile (DeleteRequest) returns (DeleteReply){}
+  rpc GetFile (GetReply) returns (GetReply){}
+}
+
+message AddRequest {
+  required string filename = 1;
+  required bytes data = 2;
+}
+
+message AddReply {
+  required bool success = 1;
+  optional string error = 2;
+}
+
+message DeleteRequest{
+  required string filename = 1;
+}
+
+message DeleteReply{
+  required bool success = 1;
+  optional string error = 2;
+}
+
+message GetRequest{
+  required string filename = 1;
+}
+
+message GetReply{
+  required bool success = 1;
+  required bytes data = 2;
+  optional string error = 3;
+}

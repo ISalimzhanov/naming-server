@@ -59,7 +59,7 @@ class NamingServer(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def add_file(self, data: bytes, name: str):
+    def add_file(self, size: int, name: str):
         pass
 
     @abc.abstractmethod
