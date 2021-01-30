@@ -16,6 +16,10 @@ class NamingServer(abc.ABC):
         self.chunk_size = int(os.environ['chunk_size'])
 
     @abc.abstractmethod
+    def get_connector(self, storage_id: str) -> str:
+        pass
+
+    @abc.abstractmethod
     def add_storage(self, connector: str, status: str, capacity: int) -> str:
         pass
 
@@ -60,7 +64,15 @@ class NamingServer(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def add_file(self, size: int, name: str) -> str:
+    def _chunking(self, file_id: str, file_size: int) -> list:
+        pass
+
+    @abc.abstractmethod
+    def add_file(self, size: int, name: str) -> list:
+        pass
+
+    @abc.abstractmethod
+    def _delete_chunks(self, file_id: str):
         pass
 
     @abc.abstractmethod
@@ -69,6 +81,14 @@ class NamingServer(abc.ABC):
 
     @abc.abstractmethod
     def set_stored(self, storage_id, chunks: list) -> None:
+        pass
+
+    @abc.abstractmethod
+    def chunks_of(self, filename: str) -> list:
+        pass
+
+    @abc.abstractmethod
+    def where_stored(self, chunk_id: str) -> Optional[str]:
         pass
 
     @abc.abstractmethod
