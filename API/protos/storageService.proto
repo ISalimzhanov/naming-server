@@ -1,0 +1,41 @@
+service StorageService{
+  rpc Ping(ControlRequest) returns (ControlReply) {}
+  rpc Create(UpdateRequest) returns (UpdateReply) {}
+  rpc Write(UpdateRequest) returns (UpdateReply) {}
+  rpc Read(GetRequest) returns (GetReply) {}
+  rpc Delete(DeleteRequest) returns (UpdateReply) {}
+  rpc Clear(ControlRequest) returns (ControlReply) {}
+}
+
+message ControlRequest{
+}
+
+message ControlReply{
+  required bool success = 1;
+  optional string error = 2;
+}
+
+message UpdateRequest{
+  required string filename = 1;
+  optional bytes data = 2;
+}
+
+message UpdateReply{
+  required bool success = 1;
+  optional string error = 3;
+  optional int32 capacity = 2;
+}
+
+message GetRequest{
+  required string filename = 1;
+}
+
+message GetReply{
+  required bool success = 1;
+  required bytes data = 2;
+  optional string error = 3;
+}
+
+message DeleteRequest{
+  repeated string filenames = 1;
+}

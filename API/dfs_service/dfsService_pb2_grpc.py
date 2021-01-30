@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-from API import dfservice_pb2 as dfservice__pb2
+import dfsService_pb2 as dfsService__pb2
 
 
 class DFServiceStub(object):
@@ -16,18 +16,18 @@ class DFServiceStub(object):
         """
         self.AddFile = channel.unary_unary(
                 '/DFService/AddFile',
-                request_serializer=dfservice__pb2.AddRequest.SerializeToString,
-                response_deserializer=dfservice__pb2.AddReply.FromString,
+                request_serializer=dfsService__pb2.UpdateRequest.SerializeToString,
+                response_deserializer=dfsService__pb2.UpdateReply.FromString,
                 )
         self.DeleteFile = channel.unary_unary(
                 '/DFService/DeleteFile',
-                request_serializer=dfservice__pb2.DeleteRequest.SerializeToString,
-                response_deserializer=dfservice__pb2.DeleteReply.FromString,
+                request_serializer=dfsService__pb2.UpdateRequest.SerializeToString,
+                response_deserializer=dfsService__pb2.UpdateReply.FromString,
                 )
         self.GetFile = channel.unary_unary(
                 '/DFService/GetFile',
-                request_serializer=dfservice__pb2.GetReply.SerializeToString,
-                response_deserializer=dfservice__pb2.GetReply.FromString,
+                request_serializer=dfsService__pb2.GetReply.SerializeToString,
+                response_deserializer=dfsService__pb2.GetReply.FromString,
                 )
 
 
@@ -57,18 +57,18 @@ def add_DFServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'AddFile': grpc.unary_unary_rpc_method_handler(
                     servicer.AddFile,
-                    request_deserializer=dfservice__pb2.AddRequest.FromString,
-                    response_serializer=dfservice__pb2.AddReply.SerializeToString,
+                    request_deserializer=dfsService__pb2.UpdateRequest.FromString,
+                    response_serializer=dfsService__pb2.UpdateReply.SerializeToString,
             ),
             'DeleteFile': grpc.unary_unary_rpc_method_handler(
                     servicer.DeleteFile,
-                    request_deserializer=dfservice__pb2.DeleteRequest.FromString,
-                    response_serializer=dfservice__pb2.DeleteReply.SerializeToString,
+                    request_deserializer=dfsService__pb2.UpdateRequest.FromString,
+                    response_serializer=dfsService__pb2.UpdateReply.SerializeToString,
             ),
             'GetFile': grpc.unary_unary_rpc_method_handler(
                     servicer.GetFile,
-                    request_deserializer=dfservice__pb2.GetReply.FromString,
-                    response_serializer=dfservice__pb2.GetReply.SerializeToString,
+                    request_deserializer=dfsService__pb2.GetReply.FromString,
+                    response_serializer=dfsService__pb2.GetReply.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -92,8 +92,8 @@ class DFService(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/DFService/AddFile',
-            dfservice__pb2.AddRequest.SerializeToString,
-            dfservice__pb2.AddReply.FromString,
+            dfsService__pb2.UpdateRequest.SerializeToString,
+            dfsService__pb2.UpdateReply.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -109,8 +109,8 @@ class DFService(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/DFService/DeleteFile',
-            dfservice__pb2.DeleteRequest.SerializeToString,
-            dfservice__pb2.DeleteReply.FromString,
+            dfsService__pb2.UpdateRequest.SerializeToString,
+            dfsService__pb2.UpdateReply.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -126,7 +126,7 @@ class DFService(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/DFService/GetFile',
-            dfservice__pb2.GetReply.SerializeToString,
-            dfservice__pb2.GetReply.FromString,
+            dfsService__pb2.GetReply.SerializeToString,
+            dfsService__pb2.GetReply.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

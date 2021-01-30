@@ -28,20 +28,21 @@ class MongoNs(NamingServer):
         client = pymongo.MongoClient(uri)
         self.db = client.get_database()
 
-    def add_storage(self, connector: str, status: str, capacity: int) -> bson.ObjectId:
+    def add_storage(self, connector: str, status: str, capacity: int) -> str:
         storages: pymongo.collection.Collection = self.db.storage
         if storages.find_one({'connector': connector}):
             raise ValueError("storage with the same connector already exists")
-        storage_id = storages.insert_one(
+        storage_id: bson.ObjectId = storages.insert_one(
             {
                 "connector": connector,
                 "status": status,
                 "capacity": capacity,
             }
         ).inserted_id
-        return storage_id
+        return str(storage_id)
 
-    def delete_storage(self, storage_id: bson.ObjectId) -> None:
+    def delete_storage(self, storage_id: str) -> None:
+        storage_id: bson.ObjectId = bson.ObjectId(storage_id)
         storages: pymongo.collection.Collection = self.db.storage
         # toDo delete everything related from stored, deletion_q
         deleted = storages.delete_one({'_id': storage_id}).deleted_count
@@ -51,12 +52,18 @@ class MongoNs(NamingServer):
     def get_active_storages(self) -> list:
         storages: pymongo.collection.Collection = self.db.storage
         active = storages.find({'status': 'active'})
-        return [storage['_id'] for storage in active]
+        res = [storage for storage in active]
+        for r in res:
+            r['_id'] = str(r['_id'])
+        return res
 
     def get_inactive_storages(self) -> list:
         storages: pymongo.collection.Collection = self.db.storage
         inactive = storages.find({'status': 'inactive'})
-        return [storage['_id'] for storage in inactive]
+        res = [storage for storage in inactive]
+        for r in res:
+            r['_id'] = str(r['_id'])
+        return res
 
     def max_capacity_storage(self) -> Optional[dict]:
         storages: pymongo.collection.Collection = self.db.storage
@@ -67,11 +74,14 @@ class MongoNs(NamingServer):
             ]
         )
         try:
-            return [storage for storage in sorted_][0]
+            res: dict = [storage for storage in sorted_][0]
+            res['_id'] = str(res['_id'])
+            return res
         except TypeError:
             return None
 
-    def update_capacity(self, storage_id: bson.ObjectId, capacity: int):
+    def update_capacity(self, storage_id: str, capacity: int) -> None:
+        storage_id: bson.ObjectId = bson.ObjectId(storage_id)
         storages: pymongo.collection.Collection = self.db.storage
         modified = storages.update_one(
             {'_id': storage_id},
@@ -80,7 +90,8 @@ class MongoNs(NamingServer):
         if not modified:
             raise ValueError("there is no such storage")
 
-    def activate_storage(self, storage_id: bson.ObjectId, new_connector: str) -> None:
+    def activate_storage(self, storage_id: str, new_connector: str) -> None:
+        storage_id: bson.ObjectId = bson.ObjectId(storage_id)
         stored: pymongo.collection.Collection = self.db.stored
         deleted = stored.delete_many({'storage.$id': storage_id}).deleted_count
         assert deleted, "is it reasonable"  # TEST
@@ -94,7 +105,8 @@ class MongoNs(NamingServer):
         if not modified:
             raise ValueError("there is no such storage")
 
-    def deactivate_storage(self, storage_id: bson.ObjectId):
+    def deactivate_storage(self, storage_id: str) -> None:
+        storage_id: bson.ObjectId = bson.ObjectId(storage_id)
         storages: pymongo.collection.Collection = self.db.storage
         modified = storages.update_one(
             {'_id': storage_id},
@@ -105,9 +117,10 @@ class MongoNs(NamingServer):
         stored: pymongo.collection.Collection = self.db.stored
         stored_chunks = [chunk.id for chunk in stored.find({'storage.$id': storage_id})]
         stored.delete_many({'storage.$id': storage_id})
-        self.queue_deletions(storage_id, stored_chunks)
+        self.queue_deletions(str(storage_id), stored_chunks)
 
-    def __chunking(self, file_id: bson.ObjectId, file_size: int, chunk_size: int) -> list:
+    def _chunking(self, file_id: str, file_size: int, chunk_size: int) -> list:
+        file_id: bson.ObjectId = bson.ObjectId(file_id)
         chunks: pymongo.collection.Collection = self.db.chunk
         fist_bit = 0
         res = []
@@ -123,20 +136,21 @@ class MongoNs(NamingServer):
             fist_bit += chunk_size
         return res
 
-    def add_file(self, size: int, name: str) -> bson.ObjectId:
+    def add_file(self, size: int, name: str) -> str:
         files: pymongo.collection.Collection = self.db.file
         if files.find_one({'name': name}):
             raise ValueError("file with the same name already exists")
-        file_id = files.insert_one(
+        file_id: bson.ObjectId = files.insert_one(
             {
                 'name': name,
                 'size': size,
             }
         ).inserted_id
-        self.__chunking(file_id, size, self.chunk_size)
-        return file_id
+        self._chunking(str(file_id), size, self.chunk_size)
+        return str(file_id)
 
-    def __delete_chunks(self, file_id: bson.ObjectId):
+    def _delete_chunks(self, file_id: str):
+        file_id: bson.ObjectId = bson.ObjectId(file_id)
         chunks: pymongo.collection.Collection = self.db.chunk
         # toDo add chunks to deletion queue
         deleted_count = chunks.delete_many({'file.$id': file_id}).deleted_count
@@ -145,34 +159,36 @@ class MongoNs(NamingServer):
     def delete_file(self, name: str) -> None:
         files: pymongo.collection.Collection = self.db.file
         try:
-            file_id = files.find_one({'name': name})['_id']
+            file_id: bson.ObjectId = files.find_one({'name': name})['_id']
         except TypeError:
             raise ValueError("file with such name doesn't exists")
-        self.__delete_chunks(file_id)
+        self._delete_chunks(str(file_id))
         files.delete_one({'_id': file_id})
 
-    def set_stored(self, storage_id: bson.ObjectId, chunks: list) -> None:
+    def set_stored(self, storage_id: str, chunks: list) -> None:
+        storage_id: bson.ObjectId = bson.ObjectId(storage_id)
         if not self.db.storage.find_one({'_id': storage_id}):
             raise ValueError("storage with such id doesn't exists")
         stored: pymongo.collection.Collection = self.db.stored
         stored.insert_many(
             [
                 {
-                    'chunk': bson.DBRef('chunk', chunk_id),
+                    'chunk': bson.DBRef('chunk', bson.ObjectId(chunk_id)),
                     'storage': bson.DBRef('storage', storage_id),
                 }
                 for chunk_id in chunks
             ]
         )
 
-    def queue_deletions(self, storage_id: bson.ObjectId, chunks: list) -> None:
+    def queue_deletions(self, storage_id: str, chunks: list) -> None:
+        storage_id: bson.ObjectId = bson.ObjectId(storage_id)
         if not self.db.storage.find_one({'_id': storage_id}):
             raise ValueError("storage with such id doesn't exists")
         stored = pymongo.collection.Collection = self.db.stored
         stored.delete_many(
             [
                 {
-                    'chunk.$id': chunk_id,
+                    'chunk.$id': bson.ObjectId(chunk_id),
                     'storage.$id': storage_id,
                 }
                 for chunk_id in chunks
@@ -183,24 +199,26 @@ class MongoNs(NamingServer):
             [
                 {
                     'storage': bson.DBRef('storage', storage_id),
-                    'chunk': bson.DBRef('chunk', chunk_id),
+                    'chunk': bson.DBRef('chunk', bson.ObjectId(chunk_id)),
                 }
                 for chunk_id in chunks
             ]
         )
 
-    def to_delete(self, storage_id: bson.ObjectId) -> list:
+    def to_delete(self, storage_id: str) -> list:
+        storage_id: bson.ObjectId = bson.ObjectId(storage_id)
         deletion_q: pymongo.collection.Collection = self.db.deletion_q
         to_delete = deletion_q.find({'storage.$id': storage_id})
-        return [deletion['chunk'].id for deletion in to_delete]
+        return [str(deletion['chunk'].id) for deletion in to_delete]
 
-    def accept_deletions(self, storage_id: bson.ObjectId, chunks: list) -> None:
+    def accept_deletions(self, storage_id: str, chunks: list) -> None:
+        storage_id: bson.ObjectId = bson.ObjectId(storage_id)
         deletion_q: pymongo.collection.Collection = self.db.deletion_q
         deleted = deletion_q.delete_many(
             [
                 {
                     'storage': bson.DBRef('storage', storage_id),
-                    'chunk': bson.DBRef('chunk', chunk_id),
+                    'chunk': bson.DBRef('chunk', bson.ObjectId(chunk_id)),
                 }
                 for chunk_id in chunks
             ]
@@ -238,7 +256,7 @@ class MongoNs(NamingServer):
         for chunk_info in stored_at:
             replicated = len(chunk_info['stored_at'])
             if replicated < replication_factor:
-                res.append({'chunk_id': chunk_info['_id'], 'times': replication_factor - replicated})
+                res.append({'chunk_id': str(chunk_info['_id']), 'times': replication_factor - replicated})
         return res
 
 # if __name__ == '__main__':

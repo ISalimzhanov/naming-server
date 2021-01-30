@@ -1,0 +1,28 @@
+syntax = 'proto3';
+
+service NamingService{
+  rpc Register(RegistrationRequest) returns (RegistrationReply) {}
+  rpc Connect(ConnectionRequest) returns (ConnectionReply) {}
+}
+
+message RegistrationRequest{
+  string connector = 1;
+  int32 capacity = 2;
+}
+
+message RegistrationReply{
+  bool success = 1;
+  string id = 2;
+  string error = 3;
+}
+
+message ConnectionRequest{
+  string id = 1;
+  string connector = 2;
+  int32 capacity = 3;
+}
+
+message ConnectionReply{
+  bool success = 1;
+  string error = 2;
+}

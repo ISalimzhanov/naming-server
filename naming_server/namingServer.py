@@ -1,5 +1,6 @@
 import abc
 import os
+from typing import Optional
 
 
 class NamingServer(abc.ABC):
@@ -15,63 +16,63 @@ class NamingServer(abc.ABC):
         self.chunk_size = int(os.environ['chunk_size'])
 
     @abc.abstractmethod
-    def add_storage(self, connector: str, status: str, capacity: int):
+    def add_storage(self, connector: str, status: str, capacity: int) -> str:
         pass
 
     @abc.abstractmethod
-    def delete_storage(self, storage_id):
+    def delete_storage(self, storage_id: str) -> None:
         pass
 
     @abc.abstractmethod
-    def get_active_storages(self):
+    def get_active_storages(self) -> list:
         pass
 
     @abc.abstractmethod
-    def get_inactive_storages(self):
+    def get_inactive_storages(self) -> list:
         pass
 
     @abc.abstractmethod
-    def activate_storage(self, storage_id, new_connector: str):
+    def activate_storage(self, storage_id: str, new_connector: str) -> None:
         pass
 
     @abc.abstractmethod
-    def deactivate_storage(self, storage_id):
+    def deactivate_storage(self, storage_id: str) -> None:
         pass
 
     @abc.abstractmethod
-    def max_capacity_storage(self):
+    def max_capacity_storage(self) -> Optional[dict]:
         pass
 
     @abc.abstractmethod
-    def update_capacity(self, storage_id, capacity: int):
+    def update_capacity(self, storage_id: str, capacity: int) -> None:
         pass
 
     @abc.abstractmethod
-    def queue_deletions(self, storage_id, chunks: list):
+    def queue_deletions(self, storage_id, chunks: list) -> None:
         pass
 
     @abc.abstractmethod
-    def to_delete(self, storage_id):
+    def to_delete(self, storage_id) -> list:
         pass
 
     @abc.abstractmethod
-    def accept_deletions(self, storage_id, chunks):
+    def accept_deletions(self, storage_id, chunks) -> None:
         pass
 
     @abc.abstractmethod
-    def add_file(self, size: int, name: str):
+    def add_file(self, size: int, name: str) -> str:
         pass
 
     @abc.abstractmethod
-    def delete_file(self, name: str):
+    def delete_file(self, name: str) -> None:
         pass
 
     @abc.abstractmethod
-    def set_stored(self, storage_id, chunks: list):
+    def set_stored(self, storage_id, chunks: list) -> None:
         pass
 
     @abc.abstractmethod
-    def move_file(self, old_name: str, new_name: str):
+    def move_file(self, old_name: str, new_name: str) -> None:
         pass
 
     @abc.abstractmethod

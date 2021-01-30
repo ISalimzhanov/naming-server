@@ -1,3 +1,4 @@
+from API.storage_service.storageClient import StorageClient
 from naming_server.namingServer import NamingServer
 import time
 
@@ -12,11 +13,12 @@ class ReplicationDaemon:
         for info in to_replicate:
             chunk_id = info['chunk_id']
             times = info['times']
-            data = None  # toDo get chunk data
+            data = b''  # toDo get chunk data
             for i in range(times):
-                storage_id = self.ns.max_capacity_storage()
-                # toDo send chunk's data to Storage Server
-                self.ns.set_stored(storage_id, chunk_id)
+                storage = self.ns.max_capacity_storage()
+                with StorageClient(storage['connector']) as stub:
+                    StorageClient.write(stub, chunk_id, data)
+                self.ns.set_stored(storage['_id'], chunk_id)
 
     def run(self):
         while True:

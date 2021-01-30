@@ -1,0 +1,28 @@
+syntax = 'proto3';
+
+service DFService{
+  rpc AddFile (UpdateRequest) returns (UpdateReply) {}
+  rpc DeleteFile (UpdateRequest) returns (UpdateReply){}
+  rpc GetFile (GetReply) returns (GetReply){}
+}
+
+message UpdateRequest {
+  string filename = 1;
+  bytes data = 2;
+}
+
+message UpdateReply {
+  bool success = 1;
+  string error = 2;
+}
+
+
+message GetRequest{
+  string filename = 1;
+}
+
+message GetReply{
+  bool success = 1;
+  bytes data = 2;
+  string error = 3;
+}
